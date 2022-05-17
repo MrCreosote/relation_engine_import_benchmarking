@@ -60,16 +60,16 @@ A working incantation of `arangoimport`:
 ```
 $ ~/arango/3.9.1/bin/arangoimport
     --file NCBI_Prok-matrix.txt.gz
-    --type csv
-    --collection FastANI
-    --merge-attributes key=[from]_[to]
     --headers-file NCBI_Prok-matrix.txt.gz.headers.txt
+    --type csv
+    --separator " "
     --progress true
     --server.endpoint tcp://localhost:48000
     --server.username gavin
     --server.password $ARANGO_PWD_CI
     --server.database gavin_test
-    --separator " "
+    --collection FastANI
+    --merge-attributes key=[from]_[to]
     --translate "from=_from"
     --translate "to=_to"
     --translate "key=_key"
