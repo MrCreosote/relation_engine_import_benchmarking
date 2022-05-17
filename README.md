@@ -3,6 +3,7 @@
 ## Testing FastANI relations between 90k genomes as edges
 
 Data source: http://enve-omics.ce.gatech.edu/data/fastani
+
 FastANI matrix, NCBI_Prok-matrix.txt.gz
 
 ~1B edges, ~90k verts
@@ -52,13 +53,30 @@ Since the matrix has no headers, make a headers file:
 
 ```
 $ cat NCBI_Prok-matrix.txt.gz.headers.txt 
-_from _to idscore
+from to idscore
 ```
 
 A working incantation of `arangoimport`: 
 ```
-$ ~/arango/3.9.1/bin/arangoimport --file NCBI_Prok-matrix.txt.gz --type csv --collection FastANI --merge-attributes key=[from]_[to] --headers-file NCBI_Prok-matrix.txt.gz.headers.txt --progress true --server.endpoint tcp://localhost:48000 --server.username gavin --server.password $ARANGO_PWD_CI --server.database gavin_test --separator " " --translate "from=_from" --translate "to=_to" --translate "key=_key" --from-collection-prefix node --to-collection-prefix node
-Connected to ArangoDB 'http+tcp://127.0.0.1:48000, version: 3.9.0, database: 'gavin_test', username: 'gavin'
+$ ~/arango/3.9.1/bin/arangoimport
+    --file NCBI_Prok-matrix.txt.gz
+    --type csv
+    --collection FastANI
+    --merge-attributes key=[from]_[to]
+    --headers-file NCBI_Prok-matrix.txt.gz.headers.txt
+    --progress true
+    --server.endpoint tcp://localhost:48000
+    --server.username gavin
+    --server.password $ARANGO_PWD_CI
+    --server.database gavin_test
+    --separator " "
+    --translate "from=_from"
+    --translate "to=_to"
+    --translate "key=_key"
+    --from-collection-prefix node
+    --to-collection-prefix node
+Connected to ArangoDB 'http+tcp://127.0.0.1:48000, version: 3.9.0, database: 'gavin_test',
+username: 'gavin'
 ----------------------------------------
 database:               gavin_test
 collection:             FastANI
