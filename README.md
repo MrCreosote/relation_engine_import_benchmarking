@@ -8,6 +8,8 @@ FastANI matrix, NCBI_Prok-matrix.txt.gz
 
 ~1B edges, ~90k verts
 
+### Check key = fn(name1, name2) isn't too large for Arango
+
 Max ArangoDB key length is [254 chars](https://github.com/arangodb/arangodb/issues/10754), so check max vert size:
 
 ```
@@ -43,11 +45,15 @@ In [16]:
 
 So if we concatenate vert names to make edge keys it should be ok - 113 * 2 + 1 = 227
 
+### Cluster config
+
 Loading into a collection with shards = 3, replication factor = 1, standard indexes (`_key` and `(_from, _to)`) on the CI cluster (3 nodes)
 
 At the time of writing, the 3 nodes all write to the same drives I think (?).
 
 * TODO retest when nodes write to separate drives.
+
+### File set up
 
 Since the matrix has no headers, make a headers file:
 
@@ -107,7 +113,9 @@ $ tail +80000001 NCBI_Prok-matrix.txt.gz.GCAonly.head100M.txt | head -10000000 >
 $ tail +90000001 NCBI_Prok-matrix.txt.gz.GCAonly.head100M.txt | head -10000000 > NCBI_Prok-matrix.txt.gz.GCAonly.head90-100M.txt
 ```
 
-Loading 100M smaller (30-40B) edges into Arango from a docker container on docker03:
+### Test run with GCA names, 100M edges
+
+Loading 100M smaller (~180B as Arango docs) edges into Arango from a docker container on docker03:
 
 ```
 root@3b864ab69fe5:/arangobenchmark# cat import.GCA.100M.sh 
@@ -134,6 +142,8 @@ arango/3.9.1/bin/arangoimport \
     --threads 10
 date
 ```
+**Note:** This invocation causes all the logs from `arangoimport` to be lost if redirected to a
+file
 
 Example run:
 ```
@@ -173,6 +183,162 @@ root@3b864ab69fe5:/arangobenchmark# ls -l import_log.*
 
 ```
 
+### Import 100M GCA names in 10M batches recording time & disk space
+```
+root@194be4682dd0:/arangobenchmark# cat import.parameterized.GCAonly.sh 
+#!/usr/bin/env sh
+
+arango/3.9.1/bin/arangoimport \
+    --file $INFILE \
+    --headers-file data/NCBI_Prok-matrix.txt.gz.headers.GCA.txt \
+    --type csv \
+    --separator "," \
+    --progress true \
+    --server.endpoint tcp://10.58.1.211:8531 \
+    --server.username gavin \
+    --server.password $ARANGO_PWD_CI \
+    --server.database gavin_test \
+    --collection FastANI \
+    --log.foreground-tty true \
+    --merge-attributes key=[from]_[to] \
+    --translate "from=_from" \
+    --translate "to=_to" \
+    --translate "key=_key" \
+    --from-collection-prefix node \
+    --to-collection-prefix node \
+    --threads $THREADS
+```
+
+```
+root@60d48dd5ffeb:/arangobenchmark# ipython
+Python 3.9.5 (default, May  4 2021, 18:15:18) 
+Type 'copyright', 'credits' or 'license' for more information
+IPython 7.23.1 -- An enhanced Interactive Python. Type '?' for help.
+
+In [1]: import os
+In [2]: import arango
+In [3]: import subprocess
+In [4]: import time
+
+In [6]: files = !ls data/*GCAonly.head*-*
+
+In [10]: def run_imports(files, threads):
+    ...:     pwd = os.environ['ARANGO_PWD_CI']
+    ...:     acli = arango.ArangoClient(hosts='http://10.58.1.211:8531')
+    ...:     db = acli.db('gavin_test', username='gavin', password=pwd)
+    ...:     col = db.collection('FastANI')
+    ...:     ret = []
+    ...:     for f in files:
+    ...:         print("***" + f + "***")
+    ...:         t1 = time.time()
+    ...:         res = subprocess.run(
+    ...:             './import.parameterized.GCAonly.sh',
+    ...:             capture_output=True,
+    ...:             env={
+    ...:                 'ARANGO_PWD_CI': pwd,
+    ...:                 'INFILE': f,
+    ...:                 'THREADS': str(threads)
+    ...:                 }
+    ...:             )
+    ...:         t = time.time() - t1
+    ...:         if (res.returncode > 0):
+    ...:             print("stdout")
+    ...:             print(res.stdout)
+    ...:             print("stderr")
+    ...:             print(res.stderr)
+    ...:         with open(f + ".out", 'wb') as logout:
+    ...:             logout.write(res.stdout)
+    ...:         stats = col.statistics()
+    ...:         ret.append({
+    ...:             'time': t,
+    ...:             'disk': stats['documents_size'],
+    ...:             'index': stats['indexes']['size']
+    ...:             })
+    ...:     return ret
+    ...: 
+
+In [11]: run_imports(files, 10)
+***data/NCBI_Prok-matrix.txt.gz.GCAonly.head0-10M.txt***
+***data/NCBI_Prok-matrix.txt.gz.GCAonly.head10-20M.txt***
+***data/NCBI_Prok-matrix.txt.gz.GCAonly.head20-30M.txt***
+***data/NCBI_Prok-matrix.txt.gz.GCAonly.head30-40M.txt***
+***data/NCBI_Prok-matrix.txt.gz.GCAonly.head40-50M.txt***
+***data/NCBI_Prok-matrix.txt.gz.GCAonly.head50-60M.txt***
+***data/NCBI_Prok-matrix.txt.gz.GCAonly.head60-70M.txt***
+***data/NCBI_Prok-matrix.txt.gz.GCAonly.head70-80M.txt***
+***data/NCBI_Prok-matrix.txt.gz.GCAonly.head80-90M.txt***
+***data/NCBI_Prok-matrix.txt.gz.GCAonly.head90-100M.txt***
+Out[11]: 
+[{'time': 100.69085884094238, 'disk': 865253249, 'index': 1245316500},
+ {'time': 93.10041427612305, 'disk': 1372181325, 'index': 1971201257},
+ {'time': 96.4419322013855, 'disk': 2221664182, 'index': 2381061635},
+ {'time': 95.80396676063538, 'disk': 2878582225, 'index': 2894953636},
+ {'time': 98.68604755401611, 'disk': 3624084773, 'index': 3381993682},
+ {'time': 97.59403681755066, 'disk': 4085427477, 'index': 4013655626},
+ {'time': 99.40194582939148, 'disk': 4760989627, 'index': 4485422082},
+ {'time': 100.70587682723999, 'disk': 5434036061, 'index': 4787867305},
+ {'time': 100.35941863059998, 'disk': 6080331386, 'index': 5241744374},
+ {'time': 100.36307787895203, 'disk': 6945681377, 'index': 5826990294}]
+
+# C&P'd into another ipython instance:
+
+In [8]: def print_res(data): 
+   ...:     print('|Docs loaded (M)|Cumulative time (s)|Cumulative disk size (B)
+   ...: |Cumulative index size (B)|') 
+   ...:     print('|---|---|---|---|') 
+   ...:     docs = 10 
+   ...:     cumtime = 0 
+   ...:     for line in data: 
+   ...:         cumtime += line['time'] 
+   ...:         print(f"|{docs}|{cumtime}|{line['disk']}|{line['index']}|") 
+   ...:         docs += 10 
+   ...:                                                                         
+
+In [9]: print_res(data)                                                         
+|Docs loaded (M)|Cumulative time (s)|Cumulative disk size (B)|Cumulative index size (B)|
+|---|---|---|---|
+|10|100.69085884094238|865253249|1245316500|
+|20|193.79127311706543|1372181325|1971201257|
+|30|290.2332053184509|2221664182|2381061635|
+|40|386.0371720790863|2878582225|2894953636|
+|50|484.7232196331024|3624084773|3381993682|
+|60|582.3172564506531|4085427477|4013655626|
+|70|681.7192022800446|4760989627|4485422082|
+|80|782.4250791072845|5434036061|4787867305|
+|90|882.7844977378845|6080331386|5241744374|
+|100|983.1475756168365|6945681377|5826990294|
+```
+
+#### Threads: 10
+```
+[{'time': 100.69085884094238, 'disk': 865253249, 'index': 1245316500},
+ {'time': 93.10041427612305, 'disk': 1372181325, 'index': 1971201257},
+ {'time': 96.4419322013855, 'disk': 2221664182, 'index': 2381061635},
+ {'time': 95.80396676063538, 'disk': 2878582225, 'index': 2894953636},
+ {'time': 98.68604755401611, 'disk': 3624084773, 'index': 3381993682},
+ {'time': 97.59403681755066, 'disk': 4085427477, 'index': 4013655626},
+ {'time': 99.40194582939148, 'disk': 4760989627, 'index': 4485422082},
+ {'time': 100.70587682723999, 'disk': 5434036061, 'index': 4787867305},
+ {'time': 100.35941863059998, 'disk': 6080331386, 'index': 5241744374},
+ {'time': 100.36307787895203, 'disk': 6945681377, 'index': 5826990294}]
+ ```
+
+|Docs loaded (M)|Cumulative time (s)|Cumulative disk size (B)|Cumulative index size (B)|
+|---|---|---|---|
+|10|100.69085884094238|865253249|1245316500|
+|20|193.79127311706543|1372181325|1971201257|
+|30|290.2332053184509|2221664182|2381061635|
+|40|386.0371720790863|2878582225|2894953636|
+|50|484.7232196331024|3624084773|3381993682|
+|60|582.3172564506531|4085427477|4013655626|
+|70|681.7192022800446|4760989627|4485422082|
+|80|782.4250791072845|5434036061|4787867305|
+|90|882.7844977378845|6080331386|5241744374|
+|100|983.1475756168365|6945681377|5826990294|
+
+### Imports with full strain names
+
+* TODO clean this up, right now it's out of date
 
 Make 10M and 100M line files for smaller imports:
 ```
