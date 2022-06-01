@@ -503,6 +503,11 @@ In [12]: print_res(ret)
 |90|913.6828744411469|4231695081|5873872341|
 |100|1018.0325617790222|4642203679|6358290429|
 
+#### Graphs
+
+![Load time vs. threads for 100M edges](images/loadtime_vs_threads_100Mdocs.png)
+![Data size vs. threads for 100M edges](images/datasize_vs_threads_100Mdocs.png)
+![Index size vs. threads for 100M edges](images/indexsize_vs_threads_100Mdocs.png)
 
 ### Imports with full strain names
 
