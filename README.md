@@ -392,6 +392,8 @@ In [12]: print_res(ret)
 |90|2405.4438560009003|3761069220|4958904221|
 |100|2674.0364100933075|4175970449|5417221812|
 
+Time to load without chunking: 2654.2085466384888
+
 #### Threads: 2
 
 ```
@@ -420,6 +422,8 @@ In [12]: print_res(ret)
 |90|1350.104615688324|3870428919|5165475988|
 |100|1507.4389181137085|4145517491|5381192671|
 
+Time to load without chunking: 1501.8327419757843
+
 #### Threads: 5
 ```
 [{'time': 82.61618256568909, 'disk': 1028416109, 'index': 1178578899},
@@ -447,6 +451,7 @@ In [12]: print_res(ret)
 |90|934.7167329788208|4106390054|5211345262|
 |100|1050.1583302021027|4362265517|5514485229|
 
+Time to load without chunking: 1053.9380702972412
 
 #### Threads: 10
 ```
@@ -476,6 +481,8 @@ In [12]: print_res(ret)
 |90|901.0575234889984|4116761506|5409674133|
 |100|1010.0107944011688|4513367122|5841878226|
 
+Time to load without chunking: 984.0401871204376
+
 #### Threads: 20
 ```
 [{'time': 83.00524592399597, 'disk': 1088634412, 'index': 2368193569},
@@ -503,11 +510,31 @@ In [12]: print_res(ret)
 |90|913.6828744411469|4231695081|5873872341|
 |100|1018.0325617790222|4642203679|6358290429|
 
+Time to load without chunking: 983.1698892116547
+
 #### Graphs
 
 ![Load time vs. threads for 100M edges](images/loadtime_vs_threads_100Mdocs.png)
 ![Data size vs. threads for 100M edges](images/datasize_vs_threads_100Mdocs.png)
 ![Index size vs. threads for 100M edges](images/indexsize_vs_threads_100Mdocs.png)
+
+### Importing ~1B edges
+
+(in progress)
+
+Make the full data file
+```
+In [1]: import gzip
+
+In [2]: with gzip.open('data/NCBI_Prok-matrix.txt.gz', 'rt') as infile, gzip.open('data/NCBI_Prok-matrix.txt.gz.GCAonly.txt', 'wt') as outfile:
+   ...:     for line in infile:
+   ...:         name1, name2, score = line.split()
+   ...:         if '_GCA_' in name1 and '_GCA_' in name2:
+   ...:             id1 = name1.split('_GCA_')[1].split('.')[0]
+   ...:             id2 = name2.split('_GCA_')[1].split('.')[0]
+   ...:             outfile.write(f'GCA_{id1},GCA_{id2},{score},GCA_{id1}_GCA{id2}\n')
+
+```
 
 ### Imports with full strain names
 
