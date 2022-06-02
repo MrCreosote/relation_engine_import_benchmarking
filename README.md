@@ -549,6 +549,33 @@ root@f94963f88a5a:/arangobenchmark/data# gunzip -c NCBI_Prok-matrix.txt.gz.GCAon
 ```
 `head` and `tail` look correct
 
+Using the same procedure as above for running imports:
+
+```
+In [6]: files = ['data/NCBI_Prok-matrix.txt.gz.GCAonly.txt.gz']
+
+In [7]: ret = run_imports(files, 5)
+***data/NCBI_Prok-matrix.txt.gz.GCAonly.txt.gz***
+
+In [8]: ret
+Out[8]: [{'time': 9511.930794477463, 'disk': 30064289593, 'index': 34790415400}]
+```
+
+```
+root@49a6ab15f017:/arangobenchmark/data# tail -5 NCBI_Prok-matrix.txt.gz.GCAonly.txt.gz.out 
+created:          790182532
+warnings/errors:  9227
+updated/replaced: 0
+ignored:          0
+lines read:       790191760
+```
+
+Errors are all conflicts:
+```
+root@f94963f88a5a:/arangobenchmark/data# grep WARNING NCBI_Prok-matrix.txt.gz.GCAonly.txt.gz.out | grep -v "unique constraint"
+root@f94963f88a5a:/arangobenchmark/data# 
+```
+
 ### Imports with full strain names
 
 * TODO redo this, right now it's out of date
