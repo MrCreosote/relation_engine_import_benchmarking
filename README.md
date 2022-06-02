@@ -515,6 +515,7 @@ Time to load without chunking: 983.1698892116547
 #### Graphs
 
 ![Load time vs. threads for 100M edges](images/loadtime_vs_threads_100Mdocs.png)
+![Load time vs. db size for 10M edges](images/time_to_load_10Medges_vs_db_size.png)
 ![Data size vs. threads for 100M edges](images/datasize_vs_threads_100Mdocs.png)
 ![Index size vs. threads for 100M edges](images/indexsize_vs_threads_100Mdocs.png)
 
@@ -533,8 +534,20 @@ In [2]: with gzip.open('data/NCBI_Prok-matrix.txt.gz', 'rt') as infile, gzip.ope
    ...:             id1 = name1.split('_GCA_')[1].split('.')[0]
    ...:             id2 = name2.split('_GCA_')[1].split('.')[0]
    ...:             outfile.write(f'GCA_{id1},GCA_{id2},{score},GCA_{id1}_GCA{id2}\n')
+```
+
+oops
+```
+root@f94963f88a5a:/arangobenchmark/data# mv NCBI_Prok-matrix.txt.gz.GCAonly.txt NCBI_Prok-matrix.txt.gz.GCAonly.txt.gz
+```
 
 ```
+root@f94963f88a5a:/arangobenchmark/data# gunzip -c NCBI_Prok-matrix.txt.gz | wc -l
+934312527
+root@f94963f88a5a:/arangobenchmark/data# gunzip -c NCBI_Prok-matrix.txt.gz.GCAonly.txt.gz | wc -l
+790191759
+```
+`head` and `tail` look correct
 
 ### Imports with full strain names
 
