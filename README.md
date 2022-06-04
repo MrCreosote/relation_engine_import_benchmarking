@@ -521,8 +521,6 @@ Time to load without chunking: 983.1698892116547
 
 ### Importing ~1B edges
 
-(in progress)
-
 Make the full data file
 ```
 In [1]: import gzip
@@ -574,6 +572,63 @@ Errors are all conflicts:
 ```
 root@f94963f88a5a:/arangobenchmark/data# grep WARNING NCBI_Prok-matrix.txt.gz.GCAonly.txt.gz.out | grep -v "unique constraint"
 root@f94963f88a5a:/arangobenchmark/data# 
+```
+
+### Import 10M edges into a collection with 780M edges
+
+```
+root@a85c5bf36a43:/arangobenchmark/data# gunzip -c NCBI_Prok-matrix.txt.gz.GCAonly.txt.gz | head -780000000 | gzip > NCBI_Prok-matrix.txt.gz.GCAonly.head780M.txt.gz
+```
+
+`head` and `tail` look fine
+
+```
+root@a85c5bf36a43:/arangobenchmark/data# gunzip -c NCBI_Prok-matrix.txt.gz.GCAonly.txt.gz | tail +780000001 | head -10000000 > NCBI_Prok-matrix.txt.gz.GCAonly.head780-790M.txt
+```
+
+Split looks good
+```
+root@a85c5bf36a43:/arangobenchmark/data# gunzip -c NCBI_Prok-matrix.txt.gz.GCAonly.head780M.txt.gz | tail -2
+GCA_001980835,GCA_000297635,74.699,GCA_001980835_GCA000297635
+GCA_001980835,GCA_001831025,74.6598,GCA_001980835_GCA001831025
+root@a85c5bf36a43:/arangobenchmark/data# head -2 NCBI_Prok-matrix.txt.gz.GCAonly.head780-790M.txt 
+GCA_001980835,GCA_001552215,74.6325,GCA_001980835_GCA001552215
+GCA_001980835,GCA_001829475,74.6063,GCA_001980835_GCA001829475
+root@a85c5bf36a43:/arangobenchmark/data# gunzip -c NCBI_Prok-matrix.txt.gz.GCAonly.txt.gz | grep -n -C 3 GCA_001980835_GCA001552215
+779999998-GCA_001980835,GCA_001788395,74.7086,GCA_001980835_GCA001788395
+779999999-GCA_001980835,GCA_000297635,74.699,GCA_001980835_GCA000297635
+780000000-GCA_001980835,GCA_001831025,74.6598,GCA_001980835_GCA001831025
+780000001:GCA_001980835,GCA_001552215,74.6325,GCA_001980835_GCA001552215
+780000002-GCA_001980835,GCA_001829475,74.6063,GCA_001980835_GCA001829475
+780000003-GCA_001980845,GCA_001528085,85.223,GCA_001980845_GCA001528085
+780000004-GCA_001980845,GCA_000756845,84.7426,GCA_001980845_GCA000756845
+```
+
+Using the same procedures as above to load the edges:
+```
+In [6]: files = ['data/NCBI_Prok-matrix.txt.gz.GCAonly.head780M.txt.gz', 'data/NCBI_Prok-matrix.txt.gz.GCAonly.head780-790M.txt']
+
+In [7]: ret = run_imports(files, 5)
+***data/NCBI_Prok-matrix.txt.gz.GCAonly.head780M.txt.gz***
+***data/NCBI_Prok-matrix.txt.gz.GCAonly.head780-790M.txt***
+
+In [8]: ret
+Out[8]: 
+[{'time': 9322.453085422516, 'disk': 29807987933, 'index': 34455606868},
+ {'time': 126.4388222694397, 'disk': 30138533830, 'index': 34939498403}]
+```
+
+```
+root@a85c5bf36a43:/arangobenchmark# tail -4 data/NCBI_Prok-matrix.txt.gz.GCAonly.head780M.txt.gz.out 
+warnings/errors:  9116
+updated/replaced: 0
+ignored:          0
+lines read:       780000001
+root@a85c5bf36a43:/arangobenchmark# tail -4 data/NCBI_Prok-matrix.txt.gz.GCAonly.head780-790M.txt.out 
+warnings/errors:  110
+updated/replaced: 0
+ignored:          0
+lines read:       10000001
 ```
 
 ### Imports with full strain names
