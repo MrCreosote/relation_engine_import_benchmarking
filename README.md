@@ -631,73 +631,81 @@ ignored:          0
 lines read:       10000001
 ```
 
-### Imports with full strain names
+### Interlude: rebuild docker image
 
-* TODO redo this, right now it's out of date
+Lots of stuff from the original image is going to be missing...
 
-Make 10M and 100M line files for smaller imports:
 ```
-root@bcd06c631a4b:/arangobenchmark/data# gunzip -c NCBI_Prok-matrix.txt.gz.head.10Mlines.txt.gz | wc -l
-10000000
-root@bcd06c631a4b:/arangobenchmark/data# gunzip -c NCBI_Prok-matrix.txt.gz.head.100Mlines.txt.gz | wc -l
-100000000
+$ docker pull python:3.10.4-bullseye
+Digest: sha256:86862fd2ad17902cc3a95b7effd257dfd043151f05d280170bdd6ff34f7bc78b
+$ docker run -it python:3.10.4-bullseye bash
+root@1698400eea2b:/# pip install ipython python-arango
+root@1698400eea2b:/# exit
+$ docker ps -a | grep bullseye
+1698400eea2b        python:3.10.4-bullseye                                                                    "bash"                   3 minutes ago       Exited (127) 3 minutes ago                                   thirsty_robinson
+$ docker commit 1698400eea2b gavins_ipython_image_dont_delete
 ```
 
-Run script:
+Assume docker commits after adding stuff from there on out
+
+Leaving out obvious dir creation, cds, etc
+
 ```
-root@bcd06c631a4b:/arangobenchmark# cat import.sh 
+$ !502
+export ARANGO_PWD_CI=$(head -c -1 ~/.arango3.5gavin)
+$ docker run -it -e "ARANGO_PWD_CI=$ARANGO_PWD_CI" gavins_ipython_image_dont_delete bash
+root@8fe86466b937:/arangobenchmark/arango/3.9.1# wget https://download.arangodb.com/arangodb39/Community/Linux/arangodb3-client-linux-3.9.1.tar.gz
+root@8fe86466b937:/arangobenchmark/arango/3.9.1# tar -xf arangodb3-client-linux-3.9.1.tar.gz 
+root@8fe86466b937:/arangobenchmark/arango/3.9.1# mv arangodb3-client-linux-3.9.1/* .
+root@8fe86466b937:/arangobenchmark/arango/3.9.1# rmdir arangodb3-client-linux-3.9.1
+root@8fe86466b937:/arangobenchmark/arango/3.9.1# rm arangodb3-client-linux-3.9.1.tar.gz 
+root@8fe86466b937:/arangobenchmark# apt update
+root@8fe86466b937:/arangobenchmark# apt install nano
+root@8fe86466b937:/arangobenchmark# cat import.parameterized.GCAonly.sh 
 #!/usr/bin/env sh
 
-date
 arango/3.9.1/bin/arangoimport \
-    --file data/NCBI_Prok-matrix.txt.gz.head.100Mlines.txt.gz \
-    --headers-file data/NCBI_Prok-matrix.txt.gz.headers.txt \
+    --file $INFILE \
+    --headers-file data/NCBI_Prok-matrix.txt.gz.headers.GCA.key.txt \
     --type csv \
-    --separator " " \
+    --separator "," \
     --progress true \
     --server.endpoint tcp://10.58.1.211:8531 \
     --server.username gavin \
     --server.password $ARANGO_PWD_CI \
     --server.database gavin_test \
     --collection FastANI \
-    --merge-attributes key=[from]_[to] \
-    --translate "from=_from" \
-    --translate "to=_to" \
-    --translate "key=_key" \
+    --log.foreground-tty true \
     --from-collection-prefix node \
     --to-collection-prefix node \
-    --threads 10
-date
+    --threads $THREADS
 ```
 
-Example import run on docker03 in a docker container:
+In another terminal:
 ```
-root@bcd06c631a4b:/arangobenchmark# cat import_log 
-Wed May 18 03:27:32 UTC 2022
-Connected to ArangoDB 'http+tcp://10.58.1.211:8531, version: 3.9.0, database: 'gavin_test', username: 'gavin'
-----------------------------------------
-database:               gavin_test
-collection:             FastANI
-from collection prefix: node
-to collection prefix:   node
-create:                 no
-create database:        no
-source filename:        data/NCBI_Prok-matrix.txt.gz.head.100Mlines.txt.gz
-file type:              csv
-quote:                  "
-separator:               
-headers file:           data/NCBI_Prok-matrix.txt.gz.headers.txt
-threads:                10
-on duplicate:           error
-connect timeout:        5
-request timeout:        1200
-----------------------------------------
-Starting CSV import...
+~/relationengine/testdata$ docker cp NCBI_Prok-matrix.txt.gz 8fe86466b937:/
+```
 
-created:          73106151
-warnings/errors:  221527
-updated/replaced: 0
-ignored:          0
-lines read:       73692769
-Wed May 18 04:44:47 UTC 2022
+Back to the original terminal:
+```
+root@8fe86466b937:/arangobenchmark/data# mv /NCBI_Prok-matrix.txt.gz .
+```
+
+### Imports with full strain names
+
+Prep file
+
+```
+root@cf6859c67159:/arangobenchmark# ipython
+Python 3.10.4 (main, May 28 2022, 13:14:58) [GCC 10.2.1 20210110]
+Type 'copyright', 'credits' or 'license' for more information
+IPython 8.4.0 -- An enhanced Interactive Python. Type '?' for help.
+
+In [1]: import gzip
+
+In [2]: with gzip.open('data/NCBI_Prok-matrix.txt.gz', 'rt') as infile, gzip.open('data/NCBI_Prok-matrix.txt.key.gz', 'wt') as outfile:
+   ...:     for line in infile:
+   ...:         id1, id2, score = line.split()
+   ...:         outfile.write(f'{id1},{id2},{score},{id1}_{id2}\n')
+   ...: 
 ```
