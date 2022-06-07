@@ -661,24 +661,6 @@ root@8fe86466b937:/arangobenchmark/arango/3.9.1# rmdir arangodb3-client-linux-3.
 root@8fe86466b937:/arangobenchmark/arango/3.9.1# rm arangodb3-client-linux-3.9.1.tar.gz 
 root@8fe86466b937:/arangobenchmark# apt update
 root@8fe86466b937:/arangobenchmark# apt install nano
-root@8fe86466b937:/arangobenchmark# cat import.parameterized.GCAonly.sh 
-#!/usr/bin/env sh
-
-arango/3.9.1/bin/arangoimport \
-    --file $INFILE \
-    --headers-file data/NCBI_Prok-matrix.txt.gz.headers.GCA.key.txt \
-    --type csv \
-    --separator "," \
-    --progress true \
-    --server.endpoint tcp://10.58.1.211:8531 \
-    --server.username gavin \
-    --server.password $ARANGO_PWD_CI \
-    --server.database gavin_test \
-    --collection FastANI \
-    --log.foreground-tty true \
-    --from-collection-prefix node \
-    --to-collection-prefix node \
-    --threads $THREADS
 ```
 
 In another terminal:
@@ -708,4 +690,94 @@ In [2]: with gzip.open('data/NCBI_Prok-matrix.txt.gz', 'rt') as infile, gzip.ope
    ...:         id1, id2, score = line.split()
    ...:         outfile.write(f'{id1},{id2},{score},{id1}_{id2}\n')
    ...: 
+```
+
+Headers file:
+```
+root@cf6859c67159:/arangobenchmark/data# cat NCBI_Prok-matrix.txt.key.headers.txt 
+_from,_to,idscore,_key
+```
+
+Shell script:
+```
+root@cf6859c67159:/arangobenchmark# cat import.parameterized.sh 
+#!/usr/bin/env sh
+
+arango/3.9.1/bin/arangoimport \
+    --file $INFILE \
+    --headers-file data/NCBI_Prok-matrix.txt.key.headers.txt \
+    --type csv \
+    --separator "," \
+    --progress true \
+    --server.endpoint tcp://10.58.1.211:8531 \
+    --server.username gavin \
+    --server.password $ARANGO_PWD_CI \
+    --server.database gavin_test \
+    --collection FastANI \
+    --log.foreground-tty true \
+    --from-collection-prefix node \
+    --to-collection-prefix node \
+    --threads $THREADS
+```
+
+ipython code:
+```
+root@903bb9f59479:/arangobenchmark# ipython
+Python 3.10.4 (main, May 28 2022, 13:14:58) [GCC 10.2.1 20210110]
+Type 'copyright', 'credits' or 'license' for more information
+IPython 8.4.0 -- An enhanced Interactive Python. Type '?' for help.
+
+In [1]: import os
+In [2]: import subprocess
+In [3]: import arango
+In [4]: import time
+
+In [5]: def run_imports(files, threads):
+   ...:     pwd = os.environ['ARANGO_PWD_CI']
+   ...:     acli = arango.ArangoClient(hosts='http://10.58.1.211:8531')
+   ...:     db = acli.db('gavin_test', username='gavin', password=pwd)
+   ...:     col = db.collection('FastANI')
+   ...:     ret = []
+   ...:     for f in files:
+   ...:         print("***" + f + "***")
+   ...:         t1 = time.time()
+   ...:         res = subprocess.run(
+   ...:             './import.parameterized.sh',
+   ...:             capture_output=True,
+   ...:             env={
+   ...:                 'ARANGO_PWD_CI': pwd,
+   ...:                 'INFILE': f,
+   ...:                 'THREADS': str(threads)
+   ...:                 }
+   ...:             )
+   ...:         t = time.time() - t1
+   ...:         if (res.returncode > 0):
+   ...:             print("stdout")
+   ...:             print(res.stdout)
+   ...:             print("stderr")
+   ...:             print(res.stderr)
+   ...:         with open(f + ".out", 'wb') as logout:
+   ...:             logout.write(res.stdout)
+   ...:         stats = col.statistics()
+   ...:         ret.append({
+   ...:             'time': t,
+   ...:             'disk': stats['documents_size'],
+   ...:             'index': stats['indexes']['size']
+   ...:             })
+   ...:     return ret
+
+In [6]: files = !ls data/NCBI_Prok-matrix.txt.key.gz
+
+In [8]: ret = run_imports(files, 5)
+***data/NCBI_Prok-matrix.txt.key.gz***
+
+In [9]: ret
+Out[9]: [{'time': 16552.933314561844, 'disk': 66566784024, 'index': 68504968850}]
+
+root@903bb9f59479:/arangobenchmark# tail -5 data/NCBI_Prok-matrix.txt.key.gz.out 
+created:          934312527
+warnings/errors:  0
+updated/replaced: 0
+ignored:          0
+lines read:       934312528
 ```
