@@ -1076,6 +1076,15 @@ Out[14]:
 |90|2024.1018946170807|3686826765|4567129658|
 |100|2256.4524290561676|3909801576|4994828412|
 
+#### Graphs
+
+![Load time vs. replication for 100M edges](images/loadtime_vs_replication_100Mdocs.png)
+![Data size vs. replication for 100M edges](images/datasize_vs_replication_100Mdocs.png)
+
+Note: I assume that the API is only reporting the non-replicated data size.
+
+![Index size vs. replication for 100M edges](images/indexsize_vs_replication_100Mdocs.png)
+
 ### Test with non-default indexes
 
 #### Default indexes only
