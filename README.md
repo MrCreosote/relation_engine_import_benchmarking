@@ -1206,3 +1206,9 @@ Out[32]:
 |80|1430.1246819496155|3617346033|6336243646|
 |90|1626.2296211719513|3938484523|7046135851|
 |100|1817.236196756363|4399651482|7662490568|
+
+#### Graphs
+
+![Load time vs. indexes for 100M edges](images/loadtime_vs_indexes_100Mdocs.png)
+![Data size vs. indexes for 100M edges](images/datasize_vs_indexes_100Mdocs.png)
+![Index size vs. indexes for 100M edges](images/indexsize_vs_indexes_100Mdocs.png)
