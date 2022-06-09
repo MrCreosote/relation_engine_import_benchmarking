@@ -310,7 +310,7 @@ In [5]: def run_imports(files, threads):
    ...:             })
    ...:     return ret
    ...: 
-   
+
 In [9]: def print_res(data):
    ...:     print('|Docs loaded (M)|Cumulative time (s)|Cumulative disk size (B)|Cumulative index size (B)|')
    ...:     print('|---|---|---|---|')
@@ -321,5 +321,12 @@ In [9]: def print_res(data):
    ...:         print(f"|{docs}|{cumtime}|{line['disk']}|{line['index']}|")
    ...:         docs += 10
    ...: 
+```
+
+Save the image
+```
+$ docker commit c1a775a9517a        gavins_ipython_image_dont_delete
+sha256:18cf889418dcffd5264c2b6967105ea75299fc6f583ad67157ceb8c8ce84aa21
+~/relationengine$ docker save gavins_ipython_image_dont_delete | gzip > docker_images/gavins_python_image_dont_delete.tar.gz
 ```
 
