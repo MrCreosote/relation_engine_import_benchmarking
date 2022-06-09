@@ -54,7 +54,7 @@ All experiments are run from a docker container on docker03.
 
 ### Experiments
 
-[Import 100M GCA name edges in 10M batches](./experiments/100M_GCA_names_10M_batches.md)
+[Import 100M GCA name edges with varying thread counts](./experiments/threads_GCA_names.md)
 
 [Import ~800M GCA name edges & time load an additional 10M edges](./experiments/800M_GCA_names.md)
 

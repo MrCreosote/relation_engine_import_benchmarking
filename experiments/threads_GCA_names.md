@@ -1,4 +1,4 @@
-# Import 100M GCA names in 10M batches recording time & disk space
+# Test with various thread counts
 
 [Test data setup](../create_test_data.md#100m-gca-id-edges-split-into-10m-chunks)
 
