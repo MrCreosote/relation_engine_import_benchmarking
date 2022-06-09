@@ -45,10 +45,12 @@ In [16]:
 
 So if we concatenate vert names to make edge keys it should be ok - 113 * 2 + 1 = 227
 
-### Cluster config
+### Cluster config and client set up
 
 Loading into a collection with shards = 3, replication factor = 1, standard indexes
 (`_key` and `(_from, _to)`) on the CI cluster (3 nodes)
+
+All experiments are run from a docker container on docker03.
 
 ### File set up
 
@@ -65,7 +67,7 @@ root@3b864ab69fe5:/arangobenchmark# cat data/NCBI_Prok-matrix.txt.gz.headers.GCA
 from,to,idscore
 ```
 
-To reduce edge sizes, extract just the GCA ids from the names:
+To reduce edge sizes to ~180B from ~450B, extract just the GCA ids from the names:
 
 ```
 In [1]: import gzip
@@ -83,6 +85,9 @@ In [6]: with gzip.open('NCBI_Prok-matrix.txt.gz', 'rt') as infile, open('NCBI_Pr
    ...:         if counter >= 100000000: 
    ...:             break 
 ```
+
+**Note**: There are 611 duplicate edges due to synonyms in the source file with the same GCA
+ID.
 
 Check the ids didn't get munged weirdly:
 ```
@@ -164,79 +169,6 @@ New headers file:
 ```
 root@194be4682dd0:/arangobenchmark# cat data/NCBI_Prok-matrix.txt.gz.headers.GCA.key.txt 
 _from,_to,idscore,_key
-```
-
-
-### Test run with GCA names, 100M edges
-
-Loading 100M smaller (~180B as Arango docs) edges into Arango from a docker container on docker03:
-
-```
-root@3b864ab69fe5:/arangobenchmark# cat import.GCA.100M.sh 
-#!/usr/bin/env sh
-
-date
-arango/3.9.1/bin/arangoimport \
-    --file data/NCBI_Prok-matrix.txt.gz.GCAonly.head100M.txt \
-    --headers-file data/NCBI_Prok-matrix.txt.gz.headers.GCA.txt \
-    --type csv \
-    --separator "," \
-    --progress true \
-    --server.endpoint tcp://10.58.1.211:8531 \
-    --server.username gavin \
-    --server.password $ARANGO_PWD_CI \
-    --server.database gavin_test \
-    --collection FastANI \
-    --merge-attributes key=[from]_[to] \
-    --translate "from=_from" \
-    --translate "to=_to" \
-    --translate "key=_key" \
-    --from-collection-prefix node \
-    --to-collection-prefix node \
-    --threads 10
-date
-```
-**Notes:**
-* This invocation causes all the logs from `arangoimport` to be lost if redirected to a file
-* When this was run the 3 CI db servers all wrote to the same NFS drive, which has since been
-  fixed
-
-Example run:
-```
-root@3b864ab69fe5:/arangobenchmark# ./import.GCA.100M.sh > import_log.out 2> import_log.err &
-
-root@3b864ab69fe5:/arangobenchmark# cat import_log.out 
-Sat May 21 02:35:42 UTC 2022
-Connected to ArangoDB 'http+tcp://10.58.1.211:8531, version: 3.9.0, database: 'gavin_test', username: 'gavin'
-----------------------------------------
-database:               gavin_test
-collection:             FastANI
-from collection prefix: node
-to collection prefix:   node
-create:                 no
-create database:        no
-source filename:        data/NCBI_Prok-matrix.txt.gz.GCAonly.head100M.txt
-file type:              csv
-quote:                  "
-separator:              ,
-headers file:           data/NCBI_Prok-matrix.txt.gz.headers.GCA.txt
-threads:                10
-on duplicate:           error
-connect timeout:        5
-request timeout:        1200
-----------------------------------------
-Starting CSV import...
-
-created:          99999389
-warnings/errors:  611
-updated/replaced: 0
-ignored:          0
-lines read:       100000001
-Sat May 21 03:07:52 UTC 2022
-root@3b864ab69fe5:/arangobenchmark# ls -l import_log.*
--rw-r--r-- 1 root root   0 May 21 02:35 import_log.err
--rw-r--r-- 1 root root 905 May 21 03:07 import_log.out
-
 ```
 
 ### Import 100M GCA names in 10M batches recording time & disk space
