@@ -148,15 +148,19 @@ Out[13]: {'time': 935.9380848407745, 'disk': 4249960561, 'index': 5159185669}
 
 Confirm the scripts were running in parallel:
 ```
-root@57cc052eeabb:/arangobenchmark# head -1 data/NCBI_Prok-matrix.txt.gz.GCAonly.head0-30M.key.txt.gz.out data/NCBI_Prok-matrix.txt.gz.GCAonly.head30-60M.key.txt.gz.out data/NCBI_Prok-matrix.txt.gz.GCAonly.head60-90M.key.txt.gz.out
+root@57cc052eeabb:/arangobenchmark# head -2 data/NCBI_Prok-matrix.txt.gz.GCAonly.head0-30M.key.txt.gz.out data/NCBI_Prok-matrix.txt.gz.GCAonly.head30-60M.key.txt.gz.out data/NCBI_Prok-matrix.txt.gz.GCAonly.head60-90M.key.txt.gz.out
 ==> data/NCBI_Prok-matrix.txt.gz.GCAonly.head0-30M.key.txt.gz.out <==
 Fri Jun 10 02:33:06 UTC 2022
+Connected to ArangoDB 'http+tcp://10.58.1.211:8531, version: 3.9.0, database: 'gavin_test', username: 'gavin'
 
 ==> data/NCBI_Prok-matrix.txt.gz.GCAonly.head30-60M.key.txt.gz.out <==
 Fri Jun 10 02:33:06 UTC 2022
+Connected to ArangoDB 'http+tcp://10.58.1.212:8531, version: 3.9.1, database: 'gavin_test', username: 'gavin'
 
 ==> data/NCBI_Prok-matrix.txt.gz.GCAonly.head60-90M.key.txt.gz.out <==
 Fri Jun 10 02:33:06 UTC 2022
+Connected to ArangoDB 'http+tcp://10.58.1.213:8531, version: 3.9.1, database: 'gavin_test', username: 'gavin'
+
 root@57cc052eeabb:/arangobenchmark# tail -6 data/NCBI_Prok-matrix.txt.gz.GCAonly.head0-30M.key.txt.gz.out 
 created:          29999804
 warnings/errors:  196
