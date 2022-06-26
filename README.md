@@ -67,3 +67,5 @@ Ordered by date
 [Import 100M GCA name edges with non-default indexes](./experiments/nondefault_indexes_GCA_names.md)
 
 [Import 90M GCA name edges with 3 parallel arangoimport instances](./experiments/parallel_arangoimport_GCA_names.md)
+
+[Test simple query times with various collection sizes](./experiments/query_timing_GCA_names.md)
