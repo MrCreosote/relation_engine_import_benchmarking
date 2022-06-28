@@ -52,6 +52,10 @@ Loading into a collection with shards = 3, replication factor = 1, standard inde
 
 All experiments are run from a docker container on docker03.
 
+### Data analysis
+
+[Vertex outdegree probability distribution](./vertex_outgoing_edges_stats.md)
+
 ### Experiments
 
 Ordered by date
