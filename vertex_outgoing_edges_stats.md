@@ -324,3 +324,9 @@ Aphanocapsa_montana_BDHKU210001_GCA_000817745.LargeContigs.fna 75746
 |Mastigocladus_laminosus_74_GCA_001990805.LargeContigs.fna|63946 / 81013|
 |Mastigocladus_laminosus_UU774_GCA_000934435.LargeContigs.fna|72457 / 81013|
 |Aphanocapsa_montana_BDHKU210001_GCA_000817745.LargeContigs.fna|75746 / 81013|
+
+Sanity check:
+```
+root@2ccd79c28269:/arangobenchmark/data# gunzip -c NCBI_Prok-matrix.txt.gz | grep Aphanocapsa_montana_BDHKU210001_GCA_000817745.LargeContigs.fna | wc -l
+83575
+```
