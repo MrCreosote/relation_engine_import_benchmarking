@@ -1,8 +1,9 @@
-# Probability distribution of vertex outdegree
+# Distribution of vertex outdegree
 
 [Test data setup](./create_test_data.md#790m-gca-edges)
 
 
+## Calculations
 ```
 root@1bf971c2965d:/arangobenchmark# ipython
 Python 3.10.4 (main, May 28 2022, 13:14:58) [GCC 10.2.1 20210110]
@@ -216,8 +217,110 @@ In [16]: for i in res[0]:
 160
 ```
 
+## Graphs
 ![Outdegree frequency, full chart](./images/outdegree_frequency_full.png)
 ![Outdegree frequency, 0-30k](./images/outdegree_frequency_0-30k.png)
 ![Outdegree frequency, 30-80k](./images/outdegree_frequency_30-80k.png)
 
+## High outdegree vertices
 
+```
+root@2ccd79c28269:/arangobenchmark# ipython
+Python 3.10.4 (main, May 28 2022, 13:14:58) [GCC 10.2.1 20210110]
+Type 'copyright', 'credits' or 'license' for more information
+IPython 8.4.0 -- An enhanced Interactive Python. Type '?' for help.
+
+In [1]: import json
+
+In [2]: with open('data/frequencies.json') as infile:
+   ...:     freqs = json.loads(infile.read())
+   ...: 
+
+In [3]: len(freqs)
+Out[3]: 81013
+
+In [4]: topfreqs = {k: freqs[k] for k in freqs if freqs[k] > 40000}
+
+In [5]: len(topfreqs)
+Out[5]: 7
+
+In [7]: noedges = [k for k in freqs if freqs[k] == 0]
+
+In [8]: len(noedges)
+Out[8]: 0
+
+In [9]: topfreqs
+Out[9]: 
+{'GCA_000817745': 75746,
+ 'GCA_000817775': 45981,
+ 'GCA_001990805': 63946,
+ 'GCA_000934435': 72457,
+ 'GCA_000285855': 55288,
+ 'GCA_001751265': 46665,
+ 'GCA_000230485': 58568}
+```
+```
+root@2ccd79c28269:/arangobenchmark# ipython
+Python 3.10.4 (main, May 28 2022, 13:14:58) [GCC 10.2.1 20210110]
+Type 'copyright', 'credits' or 'license' for more information
+IPython 8.4.0 -- An enhanced Interactive Python. Type '?' for help.
+
+In [1]: import json
+
+In [2]: with open('data/frequencies.json') as infile:
+   ...:     freqs = json.loads(infile.read())
+   ...: 
+
+In [3]: topfreqs = {k: freqs[k] for k in freqs if freqs[k] > 40000}
+
+In [4]: len(topfreqs)
+Out[4]: 7
+
+In [6]: import gzip
+
+In [7]: from collections import defaultdict
+
+In [12]: names = defaultdict(set)
+
+In [13]: with gzip.open('data/NCBI_Prok-matrix.txt.gz', 'rt') as infile:
+    ...:     for line in infile:
+    ...:         name1, name2, score = line.split()
+    ...:         for gcaid in topfreqs:
+    ...:             if gcaid in name1:
+    ...:                 names[gcaid].add(name1)
+
+In [14]: len(names)
+Out[14]: 7
+
+In [15]: for v in names.values():
+    ...:     print(len(v))
+    ...: 
+1
+1
+1
+1
+1
+1
+1
+
+In [18]: for gca, count in sorted(topfreqs.items(), key=lambda x: x[1]):
+    ...:     print(next(iter(names[gca])), count)
+    ...: 
+Lyngbya_confervoides_BDU141951_GCA_000817775.LargeContigs.fna 45981
+Streptomyces_nanshensis_GCA_001751265.LargeContigs.fna 46665
+Ruminococcus_sp__JC304_GCA_000285855.LargeContigs.fna 55288
+uncultured_marine_crenarchaeote__Gulf_of_Maine__GCA_000230485.LargeContigs.fna 58568
+Mastigocladus_laminosus_74_GCA_001990805.LargeContigs.fna 63946
+Mastigocladus_laminosus_UU774_GCA_000934435.LargeContigs.fna 72457
+Aphanocapsa_montana_BDHKU210001_GCA_000817745.LargeContigs.fna 75746
+```
+
+|ID|Outdegree / total vertices|
+|--|--|
+|Lyngbya_confervoides_BDU141951_GCA_000817775.LargeContigs.fna|45981 / 81013|
+|Streptomyces_nanshensis_GCA_001751265.LargeContigs.fna|46665 / 81013|
+|Ruminococcus_sp__JC304_GCA_000285855.LargeContigs.fna|55288 / 81013|
+|uncultured_marine_crenarchaeote__Gulf_of_Maine__GCA_000230485.LargeContigs.fna|58568 / 81013|
+|Mastigocladus_laminosus_74_GCA_001990805.LargeContigs.fna|63946 / 81013|
+|Mastigocladus_laminosus_UU774_GCA_000934435.LargeContigs.fna|72457 / 81013|
+|Aphanocapsa_montana_BDHKU210001_GCA_000817745.LargeContigs.fna|75746 / 81013|

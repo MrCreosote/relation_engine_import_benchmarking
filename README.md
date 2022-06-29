@@ -54,7 +54,7 @@ All experiments are run from a docker container on docker03.
 
 ### Data analysis
 
-[Vertex outdegree probability distribution](./vertex_outgoing_edges_stats.md)
+[Vertex outdegree distribution](./vertex_outgoing_edges_stats.md)
 
 ### Experiments
 
