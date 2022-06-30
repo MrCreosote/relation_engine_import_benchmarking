@@ -330,3 +330,90 @@ Sanity check:
 root@2ccd79c28269:/arangobenchmark/data# gunzip -c NCBI_Prok-matrix.txt.gz | grep Aphanocapsa_montana_BDHKU210001_GCA_000817745.LargeContigs.fna | wc -l
 83575
 ```
+
+## Investigating GCA_000817745
+
+```
+root@75ac16a4e39b:/# ipython
+Python 3.10.4 (main, May 28 2022, 13:14:58) [GCC 10.2.1 20210110]
+Type 'copyright', 'credits' or 'license' for more information
+IPython 8.4.0 -- An enhanced Interactive Python. Type '?' for help.
+
+In [1]: import arango
+
+In [2]: import os
+
+In [3]: pwd = os.environ['ARANGO_PWD_CI']
+
+In [4]: acli = arango.ArangoClient(hosts='http://10.58.1.211:8531')
+
+In [5]: db = acli.db('gavin_test', username='gavin', password=pwd)
+
+In [6]: aql = db.aql
+
+In [7]: def query_genome_idscore(colname, genome_id, minpercent):
+   ...:     return list(aql.execute(
+   ...:         f'''
+   ...:         FOR doc IN {colname}
+   ...:             FILTER doc._from == "node/{genome_id}"
+   ...:             FILTER doc.idscore > {minpercent}
+   ...:             RETURN doc
+   ...:         '''))
+   ...: 
+
+In [8]: %time ret = query_genome_idscore('FastANI_800M_idscore_index', 'GCA_0008
+   ...: 17745', 0)
+CPU times: user 330 ms, sys: 63.3 ms, total: 393 ms
+Wall time: 1.39 s
+
+In [9]: len(ret)
+Out[9]: 75742
+
+In [10]: idscores = [d["idscore"] for d in ret]
+
+In [11]: import numpy as np
+
+In [12]: max(idscores)
+Out[12]: 99.9443
+
+In [13]: min(idscores)
+Out[13]: 74.4053
+
+In [14]: res = np.histogram(idscores, bins=30, range=(70,100))
+
+In [15]: for i in res[0]:
+    ...:     print(i)
+    ...: 
+0
+0
+0
+0
+21745
+53852
+133
+9
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+1
+0
+0
+0
+0
+0
+0
+0
+0
+0
+1
+1
+```
+
+![GCA_000817745 percent ID](./images/GCA_000817745_percID.png)
