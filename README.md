@@ -72,4 +72,4 @@ Ordered by date
 
 [Import 90M GCA name edges with 3 parallel arangoimport instances](./experiments/parallel_arangoimport_GCA_names.md)
 
-[Test simple query times with various collection sizes](./experiments/query_timing_GCA_names.md)
+[Test query times with an idscore cutoff](./experiments/query_timing_GCA_names_idscore.md)
