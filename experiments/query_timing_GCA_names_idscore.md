@@ -4,7 +4,7 @@
 [Test data setup for 800M GCA names](../create_test_data.md#780m-cga-edges--10m-gca-edges)  
 [Test data setup for 1M GCA names](../create_test_data.md#1m-gca-edges)
 
-[Starting environment](https://github.com/MrCreosote/relation_engine_import_benchmarking/blob/main/environment_setup.md#rebuild-docker-image-again-to-reduce-size)
+[Environment setup](../environment_setup.md#set-up-for-query-timings)
 
 ## Test that the data is unsorted
 
@@ -67,105 +67,6 @@ Out[12]: 0.49483
 In [13]: stochastic_sortedness(from_[0:1000000], 100000)
 Out[13]: 0.4892
 ```
-
-## Additional environment set up
-
-Shell script:
-```
-root@02979850a9e3:/arangobenchmark# cat import.parameterized.collection.sh 
-#!/usr/bin/env sh
-
-arango/3.9.1/bin/arangoimport \
-    --file $INFILE \
-    --headers-file data/NCBI_Prok-matrix.txt.key.headers.txt \
-    --type csv \
-    --separator "," \
-    --progress true \
-    --server.endpoint tcp://10.58.1.211:8531 \
-    --server.username gavin \
-    --server.password $ARANGO_PWD_CI \
-    --server.database gavin_test \
-    --collection $COLLECTION \
-    --log.foreground-tty true \
-    --from-collection-prefix node \
-    --to-collection-prefix node \
-    --threads $THREADS
-```
-
-ipython (just loading data here, so no timing analysis):
-```
-root@02979850a9e3:/arangobenchmark# ipython
-Python 3.10.4 (main, May 28 2022, 13:14:58) [GCC 10.2.1 20210110]
-Type 'copyright', 'credits' or 'license' for more information
-IPython 8.4.0 -- An enhanced Interactive Python. Type '?' for help.
-
-In [1]: import os
-
-In [2]: import time
-
-In [3]: import subprocess
-
-In [4]: import arango
-
-In [5]: def col_run_imports(files, collection, threads):
-   ...:     pwd = os.environ['ARANGO_PWD_CI']
-   ...:     acli = arango.ArangoClient(hosts='http://10.58.1.211:8531')
-   ...:     db = acli.db('gavin_test', username='gavin', password=pwd)
-   ...:     col = db.collection(collection)
-   ...:     ret = []
-   ...:     for f in files:
-   ...:         print("***" + f + "***")
-   ...:         t1 = time.time()
-   ...:         res = subprocess.run(
-   ...:             './import.parameterized.collection.sh',
-   ...:             capture_output=True,
-   ...:             env={
-   ...:                 'ARANGO_PWD_CI': pwd,
-   ...:                 'INFILE': f,
-   ...:                 'THREADS': str(threads),
-   ...:                 'COLLECTION': collection
-   ...:                 }
-   ...:             )
-   ...:         t = time.time() - t1
-   ...:         if (res.returncode > 0):
-   ...:             print("stdout")
-   ...:             print(res.stdout)
-   ...:             print("stderr")
-   ...:             print(res.stderr)
-   ...:         with open(f + ".out", 'wb') as logout:
-   ...:             logout.write(res.stdout)
-   ...:         stats = col.statistics()
-   ...:         ret.append({
-   ...:             'time': t,
-   ...:             'disk': stats['documents_size'],
-   ...:             'index': stats['indexes']['size']
-   ...:             })
-   ...:     return ret
-   ...: 
-
-In [6]: files = ['data/NCBI_Prok-matrix.txt.gz.GCAonly.txt.gz']
-
-In [7]: ret = col_run_imports(files, 'FastANI_800M', 5)
-***data/NCBI_Prok-matrix.txt.gz.GCAonly.txt.gz***
-
-In [9]: files = ['data/NCBI_Prok-matrix.txt.gz.GCAonly.head100M.key.txt.gz']
-
-In [10]: ret = col_run_imports(files, 'FastANI_100M', 5)
-***data/NCBI_Prok-matrix.txt.gz.GCAonly.head100M.key.txt.gz***
-
-In [11]: files = ['data/NCBI_Prok-matrix.txt.gz.GCAonly.head0-10M.key.txt.gz']
-
-In [12]: ret = col_run_imports(files, 'FastANI_10M', 5)
-***data/NCBI_Prok-matrix.txt.gz.GCAonly.head0-10M.key.txt.gz***
-
-In [13]: files = ['data/NCBI_Prok-matrix.txt.gz.GCAonly.head0-1M.key.txt.gz']
-
-In [14]: ret = col_run_imports(files, 'FastANI_1M', 5)
-***data/NCBI_Prok-matrix.txt.gz.GCAonly.head0-1M.key.txt.gz***
-```
-
-Performed the same loads again into new collections with an index on `idscore`. Collection names
-are as above but appended with `_idscore_index`.
 
 ## ID score queries
 
