@@ -189,3 +189,13 @@ In [2]: with gzip.open('data/NCBI_Prok-matrix.txt.gz', 'rt') as infile, gzip.ope
    ...:         outfile.write(f'{id1},{id2},{score},{id1}_{id2}\n')
    ...: 
 ```
+
+## 1M GCA edges
+
+```
+root@02979850a9e3:/arangobenchmark# gunzip -c data/NCBI_Prok-matrix.txt.gz.GCAonly.txt.gz | head -1000000 | gzip > data/NCBI_Prok-matrix.txt.gz.GCAonly.head0-1M.key.txt.gz
+root@02979850a9e3:/arangobenchmark/data# gunzip -c NCBI_Prok-matrix.txt.gz.GCAonly.head0-1M.key.txt.gz | wc -l
+1000000
+```
+
+`head` and `tail` look good

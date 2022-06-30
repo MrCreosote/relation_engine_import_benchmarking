@@ -1,19 +1,10 @@
 # Test query timing for ID score cutoff with different collection sizes
 
 [Test data setup for 10M and 100M GCA names](../create_test_data.md#100m-gca-id-edges-split-into-10m-chunks)  
-[Test data setup for 800M GCA names](../create_test_data.md#780m-cga-edges--10m-gca-edges)
+[Test data setup for 800M GCA names](../create_test_data.md#780m-cga-edges--10m-gca-edges)  
+[Test data setup for 1M GCA names](../create_test_data.md#1m-gca-edges)
 
 [Starting environment](https://github.com/MrCreosote/relation_engine_import_benchmarking/blob/main/environment_setup.md#rebuild-docker-image-again-to-reduce-size)
-
-## Additional data set up
-
-```
-root@02979850a9e3:/arangobenchmark# gunzip -c data/NCBI_Prok-matrix.txt.gz.GCAonly.txt.gz | head -1000000 | gzip > data/NCBI_Prok-matrix.txt.gz.GCAonly.head0-1M.key.txt.gz
-root@02979850a9e3:/arangobenchmark/data# gunzip -c NCBI_Prok-matrix.txt.gz.GCAonly.head0-1M.key.txt.gz | wc -l
-1000000
-```
-
-`head` and `tail` look good
 
 ## Test that the data is unsorted
 
