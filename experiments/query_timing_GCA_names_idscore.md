@@ -6,68 +6,6 @@
 
 [Environment setup](../environment_setup.md#set-up-for-query-timings)
 
-## Test that the data is unsorted
-
-The plan is to randomly choose 1000 or so IDs from the first 1M lines of the data and then
-run queries against 1M, 10M, 100M, and 800M item Arango collections. If the data is ordered,
-then the first 1M lines of the data will be first in the index and so that might have an effect
-on the search time. If the data is unordered then it shouldn't.
-
-```
-root@28c427a095af:/arangobenchmark/data# ipython
-Python 3.10.4 (main, May 28 2022, 13:14:58) [GCC 10.2.1 20210110]
-Type 'copyright', 'credits' or 'license' for more information
-IPython 8.4.0 -- An enhanced Interactive Python. Type '?' for help.
-
-In [1]: import gzip
-
-In [3]: from_ = []
-
-In [5]: with gzip.open('NCBI_Prok-matrix.txt.gz.GCAonly.txt.gz', 'rt') as infile
-   ...: :
-   ...:     for l in infile:
-   ...:         f, t, s, k = l.split(',')
-   ...:         from_.append(f)
-   ...: 
-
-In [6]: import random
-
-In [7]: 
-   ...: def stochastic_sortedness(list_, num_samples):
-   ...:     ''' Based on https://stackoverflow.com/a/16994740/643675 '''
-   ...:     if len(list_) < 2:
-   ...:         return 0
-   ...:     # a 2 item list works, but is a pretty dumb thing to pass to this fu
-   ...: nction *shrug*
-   ...:     maxindex = len(list_) - 1
-   ...:     score = 0
-   ...:     count = 0
-   ...:     while count < num_samples:
-   ...:         i1 = random.randint(0, maxindex)
-   ...:         i2 = random.randint(0, maxindex)
-   ...:         if i1 != i2:
-   ...:             score += 0 if list_[min(i1, i2)] <= list_[max(i1, i2)] else
-   ...: 1
-   ...:             count += 1
-   ...:     return score / num_samples
-   ...: 
-
-In [8]: len(from_)
-Out[8]: 790191759
-
-In [10]: stochastic_sortedness(from_, 100000)
-Out[10]: 0.49895
-
-In [11]: stochastic_sortedness(from_[0:100000000], 100000)
-Out[11]: 0.50089
-
-In [12]: stochastic_sortedness(from_[0:10000000], 100000)
-Out[12]: 0.49483
-
-In [13]: stochastic_sortedness(from_[0:1000000], 100000)
-Out[13]: 0.4892
-```
-
 ## ID score queries
 
 Testing with various cutoffs with and without indexes. Example queries are below.
