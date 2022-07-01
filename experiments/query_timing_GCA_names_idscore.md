@@ -1,7 +1,7 @@
 # Test query timing for ID score cutoff with different collection sizes
 
 [Test data setup for 10M and 100M GCA names](../create_test_data.md#100m-gca-id-edges-split-into-10m-chunks)  
-[Test data setup for 800M GCA names](../create_test_data.md#780m-cga-edges--10m-gca-edges)  
+[Test data setup for 800M GCA names](../create_test_data.md#790m-gca-edges)  
 [Test data setup for 1M GCA names](../create_test_data.md#1m-gca-edges)
 
 [Environment setup](../environment_setup.md#set-up-for-query-timings)
